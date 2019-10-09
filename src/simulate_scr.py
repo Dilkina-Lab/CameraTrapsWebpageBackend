@@ -74,7 +74,7 @@ def simulate_ipp(N, raster, n_real=1, seed=1111):
         points.append(rpoints)
     return points
 
-def simulate_capture_histories(ac, tl, K, lcp_dist, alpha0, alpha1, n_real=1, seed=1111):
+def simulate_capture_histories(ac, tl, K, lcp_dist, alpha0, alpha1, n_real=50, seed=1111):
     """
     Simulates a capture history for a simulated spatial capture-recapture study.
 
@@ -106,13 +106,8 @@ def simulate_capture_histories(ac, tl, K, lcp_dist, alpha0, alpha1, n_real=1, se
             s = ac[ni]
             sx = int(np.floor(s[0]))
             sy = int(np.floor(s[1]))
-            # dists = []
             for nt in range(len(tl)):
-                # t = tl[nt]
-                # tx = int(np.floor(t[0]))
-                # ty = int(np.floor(t[1]))
                 dist = lcp_dist[nt, sx, sy]
-                # dists.append(dist)
                 prob_cap = (1/(1+np.exp(alpha0)))*np.exp(-alpha1*dist*dist)
                 n_det = np.random.binomial(K, prob_cap)
                 rdetections[ni, nt] = n_det
@@ -184,11 +179,12 @@ def main():
     lcp_distances = find_lcp_to_pts(landscape_ndarr, config_params['ALPHA2'], trap_loc, raster_cell_size=config_params['raster_cell_size'])
     print('Computed ground truth least cost paths to each trap in %0.2f seconds'%(time.time() - timer))
     timer = time.time()
-    capture_histories = simulate_capture_histories(ac_realizations[0], trap_loc, 10, lcp_distances, config_params['ALPHA0'], config_params['ALPHA1'], seed=config_params['capture_histories_seed'])
-    print('Simulated spatial capture-recapture histories in %0.2f seconds'%(time.time() - timer))
-    with open('../data/simulation/capture_histories/'+config_file_string+'.pkl', 'wb') as f:
-        pickle.dump(capture_histories, f)
-
+    for acridx in range(config_params['n_ac_realizations']):
+        capture_histories = simulate_capture_histories(ac_realizations[acridx], trap_loc, 10, lcp_distances, config_params['ALPHA0'], config_params['ALPHA1'], seed=config_params['capture_histories_seed'])
+        with open('../data/simulation/capture_histories/'+config_file_string+'_'+str(acridx)+'.pkl', 'wb') as f:
+            pickle.dump(capture_histories, f)
+    print('Simulated and saved spatial capture-recapture histories in %0.2f seconds'%(time.time() - timer))
+    
 
 if __name__ == '__main__':
     main()
