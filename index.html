@@ -1,0 +1,674 @@
+<!doctype html>
+
+<html>
+<head>
+    <title>Quick Start - Leaflet</title>
+    
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+    <link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+    <!-- CDN references -->
+    <script src="//npmcdn.com/leaflet@1.2.0/dist/leaflet.js"></script> 
+ 
+    <script src="//cdnjs.cloudflare.com/ajax/libs/chroma-js/1.3.4/chroma.min.js"></script> 
+    <script src="//d3js.org/d3.v4.min.js"></script> 
+    <script src="//npmcdn.com/geotiff@0.3.6/dist/geotiff.js"></script> <!-- optional -->
+ 
+    <!-- Plugin -->
+    <script src="https://ihcantabria.github.io/Leaflet.CanvasLayer.Field/dist/leaflet.canvaslayer.field.js"></script> 
+</head>
+<body>
+    
+    <div class="page-header">
+        <h1 style="margin-left: 15px">Camera Traps </h1>
+        <div class="popup" onclick="helpButton()" style="float: right; margin-right: 50px; margin-bottom: 50px">Help
+            <span class="popuptext" id="myPopup" style="display: none">Popup text...</span>
+          </div>
+        <!-- <button type="button" class="btn btn-warning pull-right" id="help" onclick="helpButton()">Help</button> -->
+    </div>
+    
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-9">
+                <div id="mapid" style="width: 1230px; height: 900px;"></div>
+            </div>
+            <div class="col-lg-3">
+                <div class="card" style="width: 18rem;">
+                    <div class="card-body">
+                        <h5 class="card-title">Menu</h5>
+                        <p class="card-text">
+                        </p>
+    
+                        <!-- <a href="#" class="btn btn-primary" onclick="getCSV()">Load locations</a><br> -->
+                        <input type="file" class="menu" id="file-selector" multiple/>
+                        <input type="button" class="menu" value="Analyze Locations"><br>
+                        <input type="button" class="menu" value="Save Locations" onclick="savetoCSV()">
+                        <img src="http://127.0.0.1:8887/bottle-webapps/tif.png">
+                        <!-- <a href="#" class="btn btn-primary">Analyze locations</a><br>
+                        <a href="#" class="btn btn-primary" onclick="savetoCSV()">Save locations</a> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function helpButton() {
+            //document.getElementById('help').bindPopup("here is help");
+            var popup = document.getElementById("myPopup");
+            popup.classList.toggle("show");
+        }
+        var greenIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+            });
+        
+
+        var redIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+        });
+
+        var greyIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+        });
+        var all_markers = [];
+        const fileSelector = document.getElementById('file-selector');
+        fileSelector.addEventListener('change',(event) => {
+            const fileList = event.target.files;
+            console.log(fileList);
+            console.log(fileList[0].name);
+            console.log(fileList[0].type);
+            for(var f=0; f < fileList.length; f++) {
+                let reader = new FileReader();
+                reader.readAsText(fileList[f]);
+                console.log(fileList[f].name);
+            reader.onload = function() {
+                var csv = reader.result;
+                console.log(csv);
+                var allLines = csv.split(/\r\n|\n/);
+                var lines = [];
+                for(var i=0; i < allLines.length; i++) {
+                    var data = allLines[i].split(',');
+                    var tarr = [];
+                    for(var j=0; j < data.length; j++) {
+                        tarr.push(data[j]);
+                    }
+                    lines.push(tarr);
+                }
+                console.log(lines);
+                console.log(lines[1][0]);
+                console.log(lines[1][1]);
+                for (i=1; i<lines.length - 1; i++){
+                    console.log(lines[i]);
+                    var geojsonFeature = {
+                        "type": "Feature",
+                            "properties": {},
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": [lines[i][2], lines[i][1]]
+                        }
+                    }
+    all_markers.push(L.marker([lines[i][2],lines[i][1]]));                
+    var marker;
+    var id = lines[i][0];
+    var total_detections = 0;
+    if(lines[i].length > 3) {
+        total_detections = lines[i][3];
+    } else {
+        total_detections = 200;
+    }
+   
+    if (total_detections < 1) {
+        L.geoJson(geojsonFeature, {
+        
+        pointToLayer: function(feature, latlng){
+            
+            marker = L.marker([lines[i][2],lines[i][1]], {
+                
+                title: "Resource Location",
+                alt: "Resource Location",
+                riseOnHover: true,
+                draggable: true,
+                icon: redIcon,
+
+            }).bindPopup("<input type='button' value='Detections: " + total_detections + ", Click to delete this marker' class='marker-delete-button'/>");
+            marker.on("popupopen", onPopupOpen);
+            // .bindPopup("<input type='button' value=" + total_detections + "Delete this marker class='marker-delete-button'/>");
+            return marker;
+        }
+    }).addTo(mymap);
+
+    } else if (total_detections < 10) {
+        L.geoJson(geojsonFeature, {
+        
+        pointToLayer: function(feature, latlng){
+            
+            marker = L.marker([lines[i][2],lines[i][1]], {
+                
+                title: "Resource Location",
+                alt: "Resource Location",
+                riseOnHover: true,
+                draggable: true,
+
+            }).bindPopup("<input type='button' value='Detections: " + total_detections + ", Click to delete this marker' class='marker-delete-button'/>");
+        
+            marker.on("popupopen", onPopupOpen);
+            // .bindPopup("<input type='button' value=" + total_detections + "Delete this marker class='marker-delete-button'/>");
+            return marker;
+        }
+    }).addTo(mymap);
+
+    } else if (total_detections < 200) {
+        L.geoJson(geojsonFeature, {
+        
+        pointToLayer: function(feature, latlng){
+            
+            marker = L.marker([lines[i][2],lines[i][1]], {
+                
+                title: "Resource Location",
+                alt: "Resource Location",
+                riseOnHover: true,
+                draggable: true,
+                icon: greenIcon,
+
+            }).bindPopup("<input type='button' value='Detections: " + total_detections + ", Click to delete this marker' class='marker-delete-button'/>");
+            marker.on("popupopen", onPopupOpen);
+            // .bindPopup("<input type='button' value=" + total_detections + "Delete this marker class='marker-delete-button'/>");
+            return marker;
+        }
+    }).addTo(mymap);
+
+    } else {
+        L.geoJson(geojsonFeature, {
+        
+        pointToLayer: function(feature, latlng){
+            
+            marker = L.marker([lines[i][2],lines[i][1]], {
+                
+                title: "Resource Location",
+                alt: "Resource Location",
+                riseOnHover: true,
+                draggable: true,
+                icon: greyIcon,
+
+            }).bindPopup("<input type='button' value='Detections: " + total_detections + ", Click to delete this marker' class='marker-delete-button'/>");
+            marker.on("popupopen", onPopupOpen);
+            // .bindPopup("<input type='button' value=" + total_detections + "Delete this marker class='marker-delete-button'/>");
+            return marker;
+        }
+    }).addTo(mymap);
+
+    }
+                }
+            }
+                
+            }
+            
+            // var group = new L.featureGroup(all_markers);
+            // mymap.fitBounds(group.getBounds());
+
+        });
+        
+    
+            // var lines = reader.onload();
+            // console.log(lines);
+            // console.log(lines[0]);
+            // console.log(lines[1]);
+            // reader.onload = function() {
+            //     data = reader.result;
+            //     console.log(data);
+            //     console.log(data[1]);
+            //     console.log(data[1][0]);
+            //     console.log(data[1][1]);
+            // }
+    
+        //     $.ajax({
+        //         type: "POST",
+        //         url: urlPrefix+"getCSV",
+        //         contentType: "application/json",
+        //         data: JSON.stringify(fileList[0].name),
+        //         success: function(data){
+        //             console.log(data['locations'].length);
+        //             for (i=1; i<data['locations'].length; i++){
+        //                 console.log(data['locations'][i]);
+        //                 var geojsonFeature = {
+        // "type": "Feature",
+        //     "properties": {},
+        //     "geometry": {
+        //         "type": "Point",
+        //         "coordinates": [data['locations'][i][1], data['locations'][i][2]]
+        // }
+    //         $.ajax({
+    //             type: "POST",
+    //             url: urlPrefix+"getCSV",
+    //             contentType: "application/json",
+    //             data: JSON.stringify(fileList[0].name),
+    //             success: function(data){
+    //                 console.log(data['locations'].length);
+    //                 for (i=1; i<data['locations'].length; i++){
+    //                     console.log(data['locations'][i]);
+    //                     var geojsonFeature = {
+    //     "type": "Feature",
+    //         "properties": {},
+    //         "geometry": {
+    //             "type": "Point",
+    //             "coordinates": [data['locations'][i][1], data['locations'][i][2]]
+    //     }
+    // }
+
+    // var marker;
+    // var id = data['locations'][i][0];
+    // L.geoJson(geojsonFeature, {
+        
+    //     pointToLayer: function(feature, latlng){
+            
+    //         marker = L.marker([data['locations'][i][1],data['locations'][i][2]], {
+                
+    //             title: "Resource Location",
+    //             alt: "Resource Location",
+    //             riseOnHover: true,
+    //             draggable: true,
+
+    //         }).bindPopup("<input type='button' value=" + id + "'Delete this marker' width='900' maxHeight='300'/>");
+
+    //         marker.on("popupopen", onPopupOpen);
+       
+    //         return marker;
+    //     }
+    // }).addTo(mymap);
+    //                     // var marker = L.marker([data['locations'][i][1],data['locations'][i][2]], {
+    //                     //     title: "Resource Location",
+    //                     //     alt: "Resource Location",
+    //                     //     riseOnHover: true,
+    //                     //     draggable: true,
+    //                     // }).bindPopup("<input type='button' value='Delete this marker' class='marker-delete-button'/>");
+    //                     // marker.on("popupopen", onPopupOpen);
+    //                     // marker.addTo(mymap);
+    //                 }
+    //             },
+    //             error: notifyFail
+    //         });
+    //     });
+
+        function coordinate(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        var mymap = L.map('mapid', {
+        }).setView([-2, 113], 1);
+        
+        L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+              minZoom: 2,
+              maxZoom: 18,
+              attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+                '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+                'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+              id: 'mapbox/satellite-v9'
+        }).addTo(mymap); 
+        
+        var marker = L.marker([-2.30057, 113.91516999999999], {
+            title: "Testing",
+            riseOnHover: true,
+            draggable: true,
+        });
+        var marker1 = L.marker([-2.30057, 113.80616], {
+            title: "Testing",
+            riseOnHover: true,
+            draggable: true,
+        });
+        var marker2 = L.marker([-2.3535, 113.80616], {
+            title: "Testing",
+            riseOnHover: true,
+            draggable: true,
+        });
+        var marker3 = L.marker([-2.3535, 113.91516999999999], {
+            title: "Testing",
+            riseOnHover: true,
+            draggable: true,
+        });
+        marker.addTo(mymap);
+        marker1.addTo(mymap);
+        marker2.addTo(mymap);
+        marker3.addTo(mymap);
+        marker.on("dblclick", function(e){
+            alert(e.latlng);
+        });
+
+//         d3.text("https://127.0.0.1:8887/bottle-webapps/test2.tiff", function (asc) {
+//     var s = L.ScalarField.fromASCIIGrid(asc);
+//     var t = L.ScalarField.geoti
+//     var layer = L.canvasLayer.scalarField(s).addTo(mymap);
+ 
+//     mymap.fitBounds(layer.getBounds());
+// });
+
+d3.request("https://127.0.0.1:8887/bottle-webapps/test2.tiff").responseType('arraybuffer').get( 
+            function (error, tiffData) {
+                // Geopotential height (BAND 0)
+                let geo = L.ScalarField.fromGeoTIFF(tiffData.response, bandIndex = 0);
+
+                let layerGeo = L.canvasLayer.scalarField(geo, {
+                    color: chroma.scale('RdPu').domain(geo.range),
+                    opacity: 0.65
+                }).addTo(mymap);
+                // layerGeo.on('click', function (e) {
+                //     if (e.value !== null) {
+                //         let v = e.value.toFixed(0);
+                //         let html = (`<span class="popupText">Geopotential height ${v} m</span>`);
+                //         let popup = L.popup()
+                //             .setLatLng(e.latlng)
+                //             .setContent(html)
+                //             .openOn(map);
+                //     }
+                // });
+
+                // // Temperature (BAND 1)
+                // let t = L.ScalarField.fromGeoTIFF(tiffData.response, bandIndex = 1);
+                // let layerT = L.canvasLayer.scalarField(t, {
+                //     color: chroma.scale('OrRd').domain(t.range),
+                //     opacity: 0.65
+                // });
+                // layerT.on('click', function (e) {
+                //     if (e.value !== null) {
+                //         let v = e.value.toFixed(1);
+                //         let html = (`<span class="popupText">Temperature ${v} ºC</span>`);
+                //         let popup = L.popup()
+                //             .setLatLng(e.latlng)
+                //             .setContent(html)
+                //             .openOn(map);
+                //     }
+                // });
+
+                // L.control.layers({
+                //     "Geopotential Height": layerGeo,
+                //     "Temperature": layerT
+                // }, {}, {
+                //         position: 'bottomleft',
+                //         collapsed: false
+                //     }).addTo(map);
+
+                mymap.fitBounds(layerGeo.getBounds());
+
+            });
+
+        // var imageUrl = "http://127.0.0.1:8887/bottle-webapps/out.png"
+        // // var imageUrl = 'file:../../tif.png',
+        // imageBounds = [[-2.30057, 113.80616], [-2.3535, 113.91516999999999]];
+        // L.imageOverlay(imageUrl, imageBounds).addTo(mymap).bringToFront();
+
+        // initialize the map on the "map" div with a given center and zoom
+
+// attaching function on map click
+mymap.on('click', onMapClick);
+console.log("map crs: " + mymap.options.crs.code)
+
+// Script for adding marker on map click
+function onMapClick(e) {
+
+    var geojsonFeature = {
+        "type": "Feature",
+            "properties": {},
+            "geometry": {
+                "type": "Point",
+                "coordinates": [e.latlng.lat, e.latlng.lng]
+        }
+    }
+
+    var marker;
+
+    L.geoJson(geojsonFeature, {
+        
+        pointToLayer: function(feature, latlng){
+            
+            marker = L.marker(e.latlng, {
+                
+                title: "Resource Location",
+                alt: "Resource Location",
+                riseOnHover: true,
+                draggable: true,
+
+            }).bindPopup("<input type='button' value='New location, Click to delete this marker' class='marker-delete-button'/>");
+
+            marker.on("popupopen", onPopupOpen);
+       
+            return marker;
+        }
+    }).addTo(mymap);
+}
+
+
+// Function to handle delete as well as other events on marker popup open
+function onPopupOpen() {
+
+    var tempMarker = this;
+
+    //var tempMarkerGeoJSON = this.toGeoJSON();
+
+    //var lID = tempMarker._leaflet_id; // Getting Leaflet ID of this marker
+
+    // To remove marker on click of delete
+    $(".marker-delete-button:visible").click(function () {
+        mymap.removeLayer(tempMarker);
+    });
+}
+
+// var savetoCSV = function() {
+//     var allMarkersObjArray = [];//new Array();
+//     var allMarkersGeoJsonArray = [];//new Array();
+
+//     $.each(mymap._layers, function (ml) {
+//         //console.log(map._layers)
+//         if (mymap._layers[ml].feature) {
+            
+//             allMarkersObjArray.push(this)
+//             allMarkersGeoJsonArray.push(JSON.stringify(this.toGeoJSON()))
+//         }
+//     })
+//     console.log(allMarkersGeoJsonArray['0']);
+//     console.log(allMarkersGeoJsonArray[0].geometry.coordinates);
+//     alert("total Markers : " + allMarkersGeoJsonArray.length + "\n\n" + allMarkersGeoJsonArray + "\n\n Also see your console for object view of this array" );
+//     $.ajax({
+//         url: urlPrefix+"savetoCSV",
+//         type: "POST",
+//         contentType: "application/json", 
+//         data: JSON.stringify(allMarkersGeoJsonArray),
+//         success: function(response) {
+//            //Some Code here
+//            alert("sent to backend");
+//      }
+//     });
+// }
+
+function getAllMarkersOnMap(){
+        var allMarkersList = [];//new Array();
+            mymap.eachLayer(function(layer) {
+                if(layer instanceof L.Marker) {
+                    allMarkersList.push(layer._latlng);
+                }
+            });
+            return allMarkersList
+        }
+        // Test the function with the test marker
+        var all_markers_on_map_test = getAllMarkersOnMap()
+        console.log(all_markers_on_map_test)
+
+        // Function to save all markers on map to CSV file
+        var savetoCSV = function() {
+            var all_markers_on_map_current = getAllMarkersOnMap()
+            alert("total markers on map: "+ all_markers_on_map_current.length)
+            console.log(all_markers_on_map_current[0])
+            console.log(JSON.stringify(all_markers_on_map_current))
+            // var allMarkersObjArray = [];//new Array();
+            // var allMarkersGeoJsonArray = [];//new Array();
+
+
+           // allMarkersObjArray.push(this)	            // $.each(mymap._layers, function (ml) {
+            //allMarkersGeoJsonArray.push(JSON.stringify(this.toGeoJSON()))	            //     console.log(mymap._layers)
+            //     if (mymap._layers[ml].feature) {
+
+            //         allMarkersObjArray.push(this)
+            //         allMarkersGeoJsonArray.push(JSON.stringify(this.toGeoJSON()))
+            //     }
+            // })
+            // console.log(allMarkersGeoJsonArray['0']);
+            // console.log(allMarkersGeoJsonArray[0]);
+            // console.log(allMarkersGeoJsonArray[0].geometry.coordinates);
+            // alert("total Markers : " + allMarkersGeoJsonArray.length + "\n\n" + allMarkersGeoJsonArray + "\n\n Also see your console for object view of this array" );
+            $.ajax({
+                url: urlPrefix+"savetoCSV",
+                type: "POST",
+                contentType: "application/json", 
+                data: JSON.stringify(all_markers_on_map_current),
+                success: function(data) {
+                    console.log("done");
+                },
+                error: notifyFail
+            });
+        }	        
+
+
+// getting all the markers at once
+function getAllMarkers() {
+    
+    // var allMarkersObjArray = [];//new Array();
+    // var allMarkersGeoJsonArray = [];//new Array();
+
+    // $.each(mymap._layers, function (ml) {
+    //     //console.log(map._layers)
+    //     if (mymap._layers[ml].feature) {
+            
+    //         allMarkersObjArray.push(this)
+    //         allMarkersGeoJsonArray.push(JSON.stringify(this.toGeoJSON()))
+    //     }
+    // })
+
+    // console.log(allMarkersObjArray);
+    // alert("total Markers : " + allMarkersGeoJsonArray.length + "\n\n" + allMarkersGeoJsonArray + "\n\n Also see your console for object view of this array" );
+    // $.ajax({
+    //     url: urlPrefix+"savetoCSV",
+    //     type: "POST",
+    //     contentType: "application/json", 
+    //     data: JSON.stringify(allMarkersGeoJsonArray),
+    //     success: function(response) {
+    //        //Some Code here
+    //        alert("sent to backend");
+    //  }
+    // });
+}
+
+$(".get-markers").on("click", getAllMarkers);
+
+      // mymap.on('dblclick', function(e){
+      //   var marker = new L.Marker(e.latlng, {"zIndexOffset": 9999});
+      // //   marker.addTo(mymap);
+      // // marker.on("click", function(){ alert("testing");});
+      //   mymap.addLayer(marker);
+      //   marker.bindPopup("<input type='button' value='Delete this marker' class='marker-delete-button'/>").openPopup();
+      //   var coord = e.latlng.toString().split(',');
+                   //   var lat = coord[0].split('(');
+                   //   var lng = coord[1].split(')');
+      //   arr.push(new coordinate(lat[1],lng[0]));
+      //   console.log("You clicked the map at latitude: " + lat[1] + " and longitude:" + lng[0]);
+      //   var remove = L.marker([arr[0].x,arr[0].y]);
+      // mymap.removeLayer(remove);
+      // });
+     
+  
+      var urlPrefix = "http://localhost:8081/"
+
+       // Print failure response for failed JQuery requests
+       var notifyFail = function(jqXHR, textStatus, errorThrown){
+            console.debug(jqXHR.responseText)
+            //var response = $.parseJSON(jqXHR.responseText);
+            //console.log("Error in processing request: "+response.error);
+        }
+
+      var getCSV = function(){
+        console.log("in get csv")
+            $.ajax({
+                type: "POST",
+                url: urlPrefix+"getCSV",
+                contentType: "application/json",
+                data: JSON.stringify({}),
+                success: function(data){
+                  console.log(data['locations'].length);
+                    for (i=1; i<data['locations'].length; i++){
+                        console.log(data['locations'][i]);
+                        var geojsonFeature = {
+        "type": "Feature",
+            "properties": {},
+            "geometry": {
+                "type": "Point",
+                "coordinates": [data['locations'][i][1], data['locations'][i][2]]
+        }
+    }
+
+    var marker;
+    var marker_display = data['locations'][i][0] + 'Delete this marker';
+    console.log(marker_display);
+    L.geoJson(geojsonFeature, {
+        
+        pointToLayer: function(feature, latlng){
+            
+            marker = L.marker([data['locations'][i][1],data['locations'][i][2]], {
+                
+                title: "Resource Location",
+                alt: "Resource Location",
+                riseOnHover: true,
+                draggable: true,
+
+            }).bindPopup("<input type='button' value='data['locations'][i][0]' class='marker-delete-button'/>");
+            //break it up into multiple strings
+            marker.on("popupopen", onPopupOpen);
+       
+            return marker;
+        }
+    }).addTo(mymap);
+                        // var marker = L.marker([data['locations'][i][1],data['locations'][i][2]], {
+                        //     title: "Resource Location",
+                        //     alt: "Resource Location",
+                        //     riseOnHover: true,
+                        //     draggable: true,
+                        // }).bindPopup("<input type='button' value='Delete this marker' class='marker-delete-button'/>");
+                        // marker.on("popupopen", onPopupOpen);
+                        // marker.addTo(mymap);
+                    }
+                },
+                error: notifyFail
+            })
+        };
+        function onClick(e) {
+          alert(e.latlng);
+        }
+        // $(document).ready(function(){
+        //     getCSV();
+        // });
+    </script>
+
+
+</body>
+</html>
