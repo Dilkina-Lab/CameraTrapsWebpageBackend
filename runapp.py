@@ -4,6 +4,10 @@ import bottle
 import csv
 import json
 import pandas as pd
+import nest_asyncio
+
+#add nest_asyncio to avoid RuntimeError: This event loop is already running
+nest_asyncio.apply()
 
 #--------some stuff needed to get AJAX to work with bottle?--------#
 def enable_cors():
@@ -59,8 +63,10 @@ if __name__ == '__main__':
         # print(type(data))
         # return data
         data = bottle.request.json
+        #print('point one')
         # print(data)
         with open('sebangau_activity_center_summary.csv') as csvfile:
+        #with open('sebangau_real_layout_caphist_summary.csv') as csvfile:
             readCSV = csv.reader(csvfile, delimiter=',')
             count = 0
             result = {}

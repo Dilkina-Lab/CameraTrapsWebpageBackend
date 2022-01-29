@@ -11,8 +11,8 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="bootstrap.css">
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 
@@ -122,13 +122,15 @@
             console.log(fileList);
             console.log(fileList[0].name);
             console.log(fileList[0].type);
+            var mk = new L.FeatureGroup();
+            mymap.addLayer(mk);
             for(var f=0; f < fileList.length; f++) {
                 let reader = new FileReader();
                 reader.readAsText(fileList[f]);
                 console.log(fileList[f].name);
                 reader.onload = function() {
                     var csv = reader.result;
-                    console.log(csv);
+                    //console.log(csv);
                     var allLines = csv.split(/\r\n|\n/);
                     var lines = [];
                     for(var i=0; i < allLines.length; i++) {
@@ -139,11 +141,11 @@
                         }
                         lines.push(tarr);
                     }
-                    console.log(lines);
-                    console.log(lines[1][0]);
-                    console.log(lines[1][1]);
+                    //console.log(lines);
+                    //console.log(lines[1][0]);
+                    //console.log(lines[1][1]);
                     for (i=1; i<lines.length - 1; i++){
-                        console.log(lines[i]);
+                        //console.log(lines[i]);    //comment this out to see every entry of the csv file
                         var geojsonFeature = {
                             "type": "Feature",
                                 "properties": {},
@@ -152,7 +154,12 @@
                                     "coordinates": [lines[i][2], lines[i][1]]
                             }
                         }
-                        all_markers.push(L.marker([lines[i][2],lines[i][1]]));                
+                        all_markers.push(L.marker([lines[i][2],lines[i][1]]));
+                        
+                        //Automatically Grow and Shrink the bound
+                        var individualMarker = L.marker([lines[i][2],lines[i][1]]).addTo(mk);
+                        mymap.fitBounds(mk.getBounds());
+                        
                         var marker;
                         var id = lines[i][0];
                         var total_detections = 0;
@@ -243,14 +250,9 @@
                         }
                     }
                 }
-                
             }
             
-            // var group = new L.featureGroup(all_markers);
-            // mymap.fitBounds(group.getBounds());
-//             var bounds = L.latLngBounds(all_markers);
-// mymap.fitBounds(bounds);
-            fitMarkers();
+            //fitMarkers();
 
         });
         
@@ -447,6 +449,7 @@
                     layer.addTo(mymap);
 
                     mymap.fitBounds(layer.getBounds());
+                    console.log("geotiffbound:", layer.getBounds());
                     document.getElementById("overlay").style.display = "none";
                 });
                 };
