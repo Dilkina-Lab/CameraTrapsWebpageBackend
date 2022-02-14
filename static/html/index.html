@@ -255,87 +255,6 @@
             //fitMarkers();
 
         });
-        
-    
-            // var lines = reader.onload();
-            // console.log(lines);
-            // console.log(lines[0]);
-            // console.log(lines[1]);
-            // reader.onload = function() {
-            //     data = reader.result;
-            //     console.log(data);
-            //     console.log(data[1]);
-            //     console.log(data[1][0]);
-            //     console.log(data[1][1]);
-            // }
-    
-        //     $.ajax({
-        //         type: "POST",
-        //         url: urlPrefix+"getCSV",
-        //         contentType: "application/json",
-        //         data: JSON.stringify(fileList[0].name),
-        //         success: function(data){
-        //             console.log(data['locations'].length);
-        //             for (i=1; i<data['locations'].length; i++){
-        //                 console.log(data['locations'][i]);
-        //                 var geojsonFeature = {
-        // "type": "Feature",
-        //     "properties": {},
-        //     "geometry": {
-        //         "type": "Point",
-        //         "coordinates": [data['locations'][i][1], data['locations'][i][2]]
-        // }
-    //         $.ajax({
-    //             type: "POST",
-    //             url: urlPrefix+"getCSV",
-    //             contentType: "application/json",
-    //             data: JSON.stringify(fileList[0].name),
-    //             success: function(data){
-    //                 console.log(data['locations'].length);
-    //                 for (i=1; i<data['locations'].length; i++){
-    //                     console.log(data['locations'][i]);
-    //                     var geojsonFeature = {
-    //     "type": "Feature",
-    //         "properties": {},
-    //         "geometry": {
-    //             "type": "Point",
-    //             "coordinates": [data['locations'][i][1], data['locations'][i][2]]
-    //     }
-    // }
-
-    // var marker;
-    // var id = data['locations'][i][0];
-    // L.geoJson(geojsonFeature, {
-        
-    //     pointToLayer: function(feature, latlng){
-            
-    //         marker = L.marker([data['locations'][i][1],data['locations'][i][2]], {
-                
-    //             title: "Resource Location",
-    //             alt: "Resource Location",
-    //             riseOnHover: true,
-    //             draggable: true,
-
-    //         }).bindPopup("<input type='button' value=" + id + "'Delete this marker' width='900' maxHeight='300'/>");
-
-    //         marker.on("popupopen", onPopupOpen);
-       
-    //         return marker;
-    //     }
-    // }).addTo(mymap);
-    //                     // var marker = L.marker([data['locations'][i][1],data['locations'][i][2]], {
-    //                     //     title: "Resource Location",
-    //                     //     alt: "Resource Location",
-    //                     //     riseOnHover: true,
-    //                     //     draggable: true,
-    //                     // }).bindPopup("<input type='button' value='Delete this marker' class='marker-delete-button'/>");
-    //                     // marker.on("popupopen", onPopupOpen);
-    //                     // marker.addTo(mymap);
-    //                 }
-    //             },
-    //             error: notifyFail
-    //         });
-    //     });
 
         function coordinate(x, y) {
             this.x = x;
@@ -354,7 +273,6 @@
               id: 'mapbox/satellite-v9'
         }).addTo(mymap); 
 
-        
         
         var marker = L.marker([-2.30057, 113.91516999999999], {
             title: "Testing",
@@ -376,10 +294,7 @@
             riseOnHover: true,
             draggable: true,
         });
-        // marker.addTo(mymap);
-        // marker1.addTo(mymap);
-        // marker2.addTo(mymap);
-        // marker3.addTo(mymap);
+        
         marker.on("dblclick", function(e){
             alert(e.latlng);
         });
@@ -387,20 +302,6 @@
         var latLngs = [ marker.getLatLng() ];
         var markerBounds = L.latLngBounds(latLngs);
         mymap.fitBounds(markerBounds);
-
-//         d3.text("https://127.0.0.1:8887/bottle-webapps/test2.asc", function (asc) {
-//     var s = L.ScalarField.fromASCIIGrid(asc);
-//     var layer = L.canvasLayer.scalarField(s).addTo(mymap);
- 
-//     mymap.fitBounds(layer.getBounds());
-// });
-
-// const fileSelector1 = document.getElementById('file-selector');
-// fileSelector1.addEventListener('change',(event) => {
-//             const fileList = event.target.files;
-//             console.log(fileList);
-//             console.log(fileList[0].name);
-//             console.log(fileList[0].type);
 
         var url_to_geotiff_file = "https://127.0.0.1:8887/bottle-webapps/test2.tiff";
 
@@ -412,8 +313,8 @@
 
             var layer = new GeoRasterLayer({
                 georaster: georaster,
-                opacity: 0.7,
-                pixelValuesToColorFn: values => values[0] === 42 ? '#ffffff' : '#000000',
+                opacity: 1,
+                pixelValuesToColorFn: values => values[0] === 42 ? '#ff6347' : '#00bfff',
                 resolution: 64 // optional parameter for adjusting display resolution
             });
             layer.addTo(mymap);
@@ -422,7 +323,7 @@
 
         });
         });
-
+//Important: Here processes the geoTiff data
         document.getElementById("geotiff-file").addEventListener("change", function(event) {
                 var file = event.target.files[0];
                 console.log("file:", file);
@@ -442,7 +343,8 @@
                     */
                     var layer = new GeoRasterLayer({
                         georaster: georaster,
-                        opacity: 0.7,
+                        opacity: 1,
+                        
                         resolution: 256
                     });
                     console.log("layer:", layer);
@@ -455,98 +357,7 @@
                 };
             });
 
-// // GeoTIFF
-// var tiff = "https://127.0.0.1:8887/bottle-webapps/test2.tiff";
-// fetch(tiff).then(r => r.arrayBuffer()).then(function(buffer) {
-//   var s = L.ScalarField.fromGeoTIFF(buffer);
-//   let layer = L.canvasLayer.scalarField(s).addTo(map);
-//   layer.on("click", function(e) {
-//     if (e.value !== null) {
-//       let popup = L.popup()
-//       .setLatLng(e.latlng)
-//       .setContent(`${e.value}`)
-//       .openOn(map);
-//     }
-//   });
-
-//   map.fitBounds(layer.getBounds());
-// });
-// d3.text('https://ihcantabria.github.io/Leaflet.CanvasLayer.Field/data/Bay_U.asc', function(u) {
-//     d3.text('https://ihcantabria.github.io/Leaflet.CanvasLayer.Field/data/Bay_V.asc', function(v) {
-//         let vf = L.VectorField.fromASCIIGrids(u, v);
-//         let layer = L.canvasLayer.vectorFieldAnim(vf).addTo(mymap);
-//         mymap.fitBounds(layer.getBounds());
-
-//         layer.on('click', function(e) {
-//             if (e.value !== null) {
-//                 let vector = e.value;
-//                 let v = vector.magnitude().toFixed(2);
-//                 let d = vector.directionTo().toFixed(0);
-//                 let html = (`<span>${v} m/s to ${d}&deg</span>`);
-//                 let popup = L.popup()
-//                     .setLatLng(e.latlng)
-//                     .setContent(html)
-//                     .openOn(mymap);
-//             }
-//         });
-//     });
-// });
-
-// d3.request("https://127.0.0.1:8887/bottle-webapps/test1.tif").responseType('arraybuffer').get( 
-//             function (error, tiffData) {
-//                 // Geopotential height (BAND 0)
-//                 let geo = L.ScalarField.fromGeoTIFF(tiffData.response, bandIndex = 0);
-
-//                 let layerGeo = L.canvasLayer.scalarField(geo, {
-//                     color: chroma.scale('RdPu').domain(geo.range),
-//                     opacity: 0.65
-//                 }).addTo(mymap);
-//                 // layerGeo.on('click', function (e) {
-//                 //     if (e.value !== null) {
-//                 //         let v = e.value.toFixed(0);
-//                 //         let html = (`<span class="popupText">Geopotential height ${v} m</span>`);
-//                 //         let popup = L.popup()
-//                 //             .setLatLng(e.latlng)
-//                 //             .setContent(html)
-//                 //             .openOn(map);
-//                 //     }
-//                 // });
-
-//                 // // Temperature (BAND 1)
-//                 // let t = L.ScalarField.fromGeoTIFF(tiffData.response, bandIndex = 1);
-//                 // let layerT = L.canvasLayer.scalarField(t, {
-//                 //     color: chroma.scale('OrRd').domain(t.range),
-//                 //     opacity: 0.65
-//                 // });
-//                 // layerT.on('click', function (e) {
-//                 //     if (e.value !== null) {
-//                 //         let v = e.value.toFixed(1);
-//                 //         let html = (`<span class="popupText">Temperature ${v} ºC</span>`);
-//                 //         let popup = L.popup()
-//                 //             .setLatLng(e.latlng)
-//                 //             .setContent(html)
-//                 //             .openOn(map);
-//                 //     }
-//                 // });
-
-//                 // L.control.layers({
-//                 //     "Geopotential Height": layerGeo,
-//                 //     "Temperature": layerT
-//                 // }, {}, {
-//                 //         position: 'bottomleft',
-//                 //         collapsed: false
-//                 //     }).addTo(map);
-
-//                 mymap.fitBounds(layerGeo.getBounds());
-
-//             });
-
-        // var imageUrl = "http://127.0.0.1:8887/bottle-webapps/out.png"
-        // // var imageUrl = 'file:../../tif.png',
-        // imageBounds = [[-2.30057, 113.80616], [-2.3535, 113.91516999999999]];
-        // L.imageOverlay(imageUrl, imageBounds).addTo(mymap).bringToFront();
-
-        // initialize the map on the "map" div with a given center and zoom
+// initialize the map on the "map" div with a given center and zoom
 
 // attaching function on map click
         mymap.on('click', onMapClick);
@@ -602,33 +413,6 @@
             });
         }
 
-// var savetoCSV = function() {
-//     var allMarkersObjArray = [];//new Array();
-//     var allMarkersGeoJsonArray = [];//new Array();
-
-//     $.each(mymap._layers, function (ml) {
-//         //console.log(map._layers)
-//         if (mymap._layers[ml].feature) {
-            
-//             allMarkersObjArray.push(this)
-//             allMarkersGeoJsonArray.push(JSON.stringify(this.toGeoJSON()))
-//         }
-//     })
-//     console.log(allMarkersGeoJsonArray['0']);
-//     console.log(allMarkersGeoJsonArray[0].geometry.coordinates);
-//     alert("total Markers : " + allMarkersGeoJsonArray.length + "\n\n" + allMarkersGeoJsonArray + "\n\n Also see your console for object view of this array" );
-//     $.ajax({
-//         url: urlPrefix+"savetoCSV",
-//         type: "POST",
-//         contentType: "application/json", 
-//         data: JSON.stringify(allMarkersGeoJsonArray),
-//         success: function(response) {
-//            //Some Code here
-//            alert("sent to backend");
-//      }
-//     });
-// }
-
         function getAllMarkersOnMap(){
             var allMarkersList = [];//new Array();
                 mymap.eachLayer(function(layer) {
@@ -648,22 +432,6 @@
                 alert("total markers on map: "+ all_markers_on_map_current.length)
                 console.log(all_markers_on_map_current[0])
                 console.log(JSON.stringify(all_markers_on_map_current))
-                // var allMarkersObjArray = [];//new Array();
-                // var allMarkersGeoJsonArray = [];//new Array();
-
-
-            // allMarkersObjArray.push(this)	            // $.each(mymap._layers, function (ml) {
-                //allMarkersGeoJsonArray.push(JSON.stringify(this.toGeoJSON()))	            //     console.log(mymap._layers)
-                //     if (mymap._layers[ml].feature) {
-
-                //         allMarkersObjArray.push(this)
-                //         allMarkersGeoJsonArray.push(JSON.stringify(this.toGeoJSON()))
-                //     }
-                // })
-                // console.log(allMarkersGeoJsonArray['0']);
-                // console.log(allMarkersGeoJsonArray[0]);
-                // console.log(allMarkersGeoJsonArray[0].geometry.coordinates);
-                // alert("total Markers : " + allMarkersGeoJsonArray.length + "\n\n" + allMarkersGeoJsonArray + "\n\n Also see your console for object view of this array" );
                 $.ajax({
                     url: urlPrefix+"savetoCSV",
                     type: "POST",
@@ -680,49 +448,9 @@
 // getting all the markers at once
 function getAllMarkers() {
     
-    // var allMarkersObjArray = [];//new Array();
-    // var allMarkersGeoJsonArray = [];//new Array();
-
-    // $.each(mymap._layers, function (ml) {
-    //     //console.log(map._layers)
-    //     if (mymap._layers[ml].feature) {
-            
-    //         allMarkersObjArray.push(this)
-    //         allMarkersGeoJsonArray.push(JSON.stringify(this.toGeoJSON()))
-    //     }
-    // })
-
-    // console.log(allMarkersObjArray);
-    // alert("total Markers : " + allMarkersGeoJsonArray.length + "\n\n" + allMarkersGeoJsonArray + "\n\n Also see your console for object view of this array" );
-    // $.ajax({
-    //     url: urlPrefix+"savetoCSV",
-    //     type: "POST",
-    //     contentType: "application/json", 
-    //     data: JSON.stringify(allMarkersGeoJsonArray),
-    //     success: function(response) {
-    //        //Some Code here
-    //        alert("sent to backend");
-    //  }
-    // });
 }
 
 $(".get-markers").on("click", getAllMarkers);
-
-      // mymap.on('dblclick', function(e){
-      //   var marker = new L.Marker(e.latlng, {"zIndexOffset": 9999});
-      // //   marker.addTo(mymap);
-      // // marker.on("click", function(){ alert("testing");});
-      //   mymap.addLayer(marker);
-      //   marker.bindPopup("<input type='button' value='Delete this marker' class='marker-delete-button'/>").openPopup();
-      //   var coord = e.latlng.toString().split(',');
-                   //   var lat = coord[0].split('(');
-                   //   var lng = coord[1].split(')');
-      //   arr.push(new coordinate(lat[1],lng[0]));
-      //   console.log("You clicked the map at latitude: " + lat[1] + " and longitude:" + lng[0]);
-      //   var remove = L.marker([arr[0].x,arr[0].y]);
-      // mymap.removeLayer(remove);
-      // });
-     
   
       var urlPrefix = "http://localhost:8081/"
 
@@ -774,22 +502,14 @@ $(".get-markers").on("click", getAllMarkers);
             return marker;
         }
     }).addTo(mymap);
-                        // var marker = L.marker([data['locations'][i][1],data['locations'][i][2]], {
-                        //     title: "Resource Location",
-                        //     alt: "Resource Location",
-                        //     riseOnHover: true,
-                        //     draggable: true,
-                        // }).bindPopup("<input type='button' value='Delete this marker' class='marker-delete-button'/>");
-                        // marker.on("popupopen", onPopupOpen);
-                        // marker.addTo(mymap);
                     }
                 },
                 error: notifyFail
             })
         };
-        function onClick(e) {
-          alert(e.latlng);
-        }
+    function onClick(e) {
+      alert(e.latlng);
+    }
         // $(document).ready(function(){
         //     getCSV();
         // });
