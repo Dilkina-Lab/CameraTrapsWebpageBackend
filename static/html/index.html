@@ -2,7 +2,7 @@
 
 <html>
 <head>
-    <title>Quick Start - Leaflet</title>
+    <title>Camera Trap Lookup</title>
     
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -260,6 +260,14 @@
             this.x = x;
             this.y = y;
         }
+        
+        function getColor(d) {
+            return d == 4 ? '#800026' :
+                   d == 3  ? '#E31A1C' :
+                   d == 2   ? '#FD8D3C' :
+                   d == 1   ? '#FED976' :
+                              '#FFEDA0';
+        }
 
         var mymap = L.map('mapid', {
         }).setView([-2, 113], 1);
@@ -324,7 +332,8 @@
 
         });
         });
-//Important: Here processes the geoTiff data
+        
+        //Important: Here processes the geoTiff data
         document.getElementById("geotiff-file").addEventListener("change", function(event) {
                 var file = event.target.files[0];
                 console.log("file:", file);
@@ -350,13 +359,28 @@
                         resolution: 256
                     });
                     console.log("layer:", layer);
-                    layer.addTo(mymap);
+                    //layer.addTo(mymap);
 
                     mymap.fitBounds(layer.getBounds());
                     console.log("geotiffbound:", layer.getBounds());
                     document.getElementById("overlay").style.display = "none";
                 });
                 };
+                
+                //Leaflet API Colorful Map
+                const jsonData = require('./test2.geojson');
+                function style(feature) {
+                    return {
+                        fillColor: getColor(feature.properties.z),
+                        weight: 2,3
+                        opacity: 1,
+                        color: 'white',
+                        dashArray: '3',
+                        fillOpacity: 0.7
+                    };
+                }
+                L.geoJson(jsonData, {style: style}).addTo(mymap);
+                
             });
 
 // initialize the map on the "map" div with a given center and zoom
