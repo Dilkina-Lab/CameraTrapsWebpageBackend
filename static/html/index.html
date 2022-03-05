@@ -273,7 +273,7 @@
                 d == 3 ? '#E31A1C' :
                     d == 2 ? '#FD8D3C' :
                         d == 1 ? '#FED976' :
-                            '#FFEDA0';
+                            '#FFEDA000'; // last two 0's are to make it opacity 0
         }
 
         var mymap = L.map('mapid', {
@@ -346,57 +346,61 @@
             console.log("file:", file);
 
             var reader = new FileReader();
-            reader.addEventListener("load", e => {
-                jsonData = JSON.parse(reader.result);
-                function style(feature) {
-                    return {
-                        fillColor: getColor(feature.properties.z),
-                        weight: 2,
-                        opacity: 1,
-                        color: 'white',
-                        dashArray: '3',
-                        fillOpacity: 0.7
-                    };
-                }
-                var layer = L.geoJson(jsonData, { style: style });
-                layer.addTo(mymap);
-                mymap.fitBounds(layer.getBounds());
-                console.log(e.target.result);
-                console.log(JSON.parse(reader.result));
-                console.log(jsonData);
-                // console.log(e.target.result, JSON.parse(reader.result))
-            });
 
-            reader.readAsText(file);
-            // reader.readAsArrayBuffer(file);
-            // reader.onloadend = function () {
-            //     var arrayBuffer = reader.result;
-            //     console.log(arrayBuffer);
+            // FOR LOADING GEOJSON (MARKERS ONLY)
+            // reader.addEventListener("load", e => {
+            //     jsonData = JSON.parse(reader.result);
+            //     function style(feature) {
+            //         return {
+            //             fillColor: getColor(feature.properties.z),
+            //             weight: 2,
+            //             opacity: 1,
+            //             color: 'white',
+            //             dashArray: '3',
+            //             fillOpacity: 0.7
+            //         };
+            //     }
+            //     var layer = L.geoJson(jsonData, { style: style });
+            //     layer.addTo(mymap);
+            //     mymap.fitBounds(layer.getBounds());
+            //     console.log(e.target.result);
             //     console.log(JSON.parse(reader.result));
-            //     parseGeoraster(arrayBuffer).then(georaster => {
+            //     console.log(jsonData);
+            //     // console.log(e.target.result, JSON.parse(reader.result))
+            // });
+            // reader.readAsText(file);
 
-            //         console.log("georaster:", georaster);
-            //         var max_value = georaster.maxs[0];
-            //         /*
-            //             GeoRasterLayer is an extension of GridLayer,
-            //             which means can use GridLayer options like opacity.
-            //             Just make sure to include the georaster option!
-            //             http://leafletjs.com/reference-1.2.0.html#gridlayer
-            //         */
-            //         var layer = new GeoRasterLayer({
-            //             georaster: georaster,
-            //             opacity: 0.8,
-            //             pixelValuesToColorFn: values => `hsl(120,100%,${(1 - values[0] / max_value / 2) * 100}%)`,
-            //             resolution: 256
-            //         });
-            //         console.log("layer:", layer);
-            //         //layer.addTo(mymap);
+            // FOR GEOTIFF
+            reader.readAsArrayBuffer(file);
+            reader.onloadend = function () {
+                var arrayBuffer = reader.result;
+                console.log(arrayBuffer);
+                parseGeoraster(arrayBuffer).then(georaster => {
 
-            //         mymap.fitBounds(layer.getBounds());
-            //         console.log("geotiffbound:", layer.getBounds());
-            //         document.getElementById("overlay").style.display = "none";
-            //     });
-            // };
+                    console.log("georaster:", georaster);
+                    var max_value = georaster.maxs[0];
+                    /*
+                        GeoRasterLayer is an extension of GridLayer,
+                        which means can use GridLayer options like opacity.
+                        Just make sure to include the georaster option!
+                        http://leafletjs.com/reference-1.2.0.html#gridlayer
+                    */
+                    var layer = new GeoRasterLayer({
+                        georaster: georaster,
+                        opacity:1,
+                        // opacity: values => values == 0? 0 : 0,
+                        pixelValuesToColorFn: getColor,
+                        // pixelValuesToColorFn: values => `hsl(120,100%,${(1 - values[0] / max_value / 2) * 100}%)`,
+                        resolution: 256
+                    });
+                    console.log("layer:", layer);
+                    layer.addTo(mymap);
+
+                    mymap.fitBounds(layer.getBounds());
+                    console.log("geotiffbound:", layer.getBounds());
+                    document.getElementById("overlay").style.display = "none";
+                });
+            };
 
             //Leaflet API Colorful Map
             // const jsonData = require('./test2.geojson');
@@ -411,22 +415,6 @@
             //     };
             // }
             // L.geoJson(jsonData, {style: style}).addTo(mymap);
-
-            $.getJSON("./test2.geojson", function (jsonData) {
-                console.log(jsonData); // this will show the info it in firebug console
-
-                function style(feature) {
-                    return {
-                        fillColor: getColor(feature.properties.z),
-                        weight: 2,
-                        opacity: 1,
-                        color: 'white',
-                        dashArray: '3',
-                        fillOpacity: 0.7
-                    };
-                }
-                L.geoJson(jsonData, { style: style }).addTo(mymap);
-            });
 
             // var geojsonLayer = new L.GeoJSON.AJAX("./test2.geojson");       
             // geojsonLayer.addTo(map);
