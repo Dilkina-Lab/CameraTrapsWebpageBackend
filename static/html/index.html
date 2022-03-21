@@ -9,6 +9,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
         integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
@@ -38,6 +40,10 @@
     <script src="https://unpkg.com/georaster"></script>
     <script src="https://unpkg.com/proj4"></script>
     <script src="https://unpkg.com/georaster-layer-for-leaflet"></script>
+    <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    </style>
 
 </head>
 
@@ -54,7 +60,7 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-lg-9">
-                <div id="mapid" style="width: 1230px; height: 900px;"></div>
+                <div id="mapid" style="width: 1000px; height: 800px;"></div>
             </div>
             <div class="col-lg-3">
                 <div class="card" style="width: 18rem;">
@@ -73,6 +79,11 @@
                         <input type="button" class="menu" value="Analyze Locations"><br>
                         <input type="button" class="menu" value="Save Locations" onclick="savetoCSV()">
                         <img src="http://127.0.0.1:8887/bottle-webapps/tif.png">
+                        
+                        <h4>Upload CSV file to the backend</h4>
+                        <input type="file" id="fileUpload">
+                        <input type="button" id="upload" value="Upload" onclick="Upload()" />
+                        
                         <!-- <a href="#" class="btn btn-primary">Analyze locations</a><br>
                         <a href="#" class="btn btn-primary" onclick="savetoCSV()">Save locations</a> -->
                     </div>
@@ -577,6 +588,25 @@
         // $(document).ready(function(){
         //     getCSV();
         // });
+        
+        
+        function Upload() {
+            var fileUpload = document.getElementById("fileUpload");
+            var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.csv|.txt)$/;
+            if (regex.test(fileUpload.value.toLowerCase())) {
+                if (typeof (FileReader) != "undefined") {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        //use "document" to access csv file, https://www.aspsnippets.com/Articles/Import-CSV-File-to-HTML-Table-using-JavaScript.aspx 
+                    }
+                    reader.readAsText(fileUpload.files[0]);
+                } else {
+                    alert("This browser does not support HTML5.");
+                }
+            } else {
+                alert("Please upload a valid CSV file.");
+            }
+        }
     </script>
 
 
