@@ -115,13 +115,11 @@
 
     <script>
 
+        //idea http://devmag.org.za/2009/05/03/poisson-disk-sampling/
 
         function addTOSpace(lines){
             var mk = new L.FeatureGroup();
             mymap.addLayer(mk);
-
-
-
                     for (i=0; i<lines.length; i++){
                         //console.log(lines[i]);    //comment this out to see every entry of the csv file
                         var geojsonFeature = {
@@ -157,6 +155,15 @@
                                 }).bindPopup("<input type='button' value='Detections: " + total_detections + ", Click to delete this marker' class='marker-delete-button'/>");
 
                                 marker.on("popupopen", onPopupOpen);
+                                marker.on('dragstart', function (e) {
+                                    previousStates = []
+                                    previousStates.push(marker.getLatLng())
+                                });
+                                 marker.on('dragend', function (e) {
+                                     window.alert("dragged")
+                                     previousAction = "Move"
+                                     previousStates.push(marker)
+                                 });
                                 // .bindPopup("<input type='button' value=" + total_detections + "Delete this marker class='marker-delete-button'/>");
                                 return marker;
                             }
@@ -275,20 +282,117 @@
 
 
         var previosuState = 0
+        var previousAction = 0
+        var previousStates = []
 
 
         function unDo(){
-            if (previosuState == 0){
+
+            if (previousAction == 0){
                 return
             }
+            if (previousAction == "Delete"){
+                var geojsonFeature = {
+                "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [previosuState.lat, previosuState.lng]
+                }
+            }
 
+            var marker;
+
+            L.geoJson(geojsonFeature, {
+
+                pointToLayer: function(feature, latlng){
+
+                    marker = L.marker(previosuState, {
+
+                        title: "Resource Location",
+                        alt: "Resource Location",
+                        riseOnHover: true,
+                        draggable: true,
+                        icon: greenIcon,
+
+                    }).bindPopup("<input type='button' value='New location, Click to delete this marker' class='marker-delete-button'/>");
+
+                    marker.on("popupopen", onPopupOpen);
+                    marker.on('dragstart', function (e) {
+                        previousStates = []
+                        previousStates.push(marker.getLatLng())
+                    });
+                     marker.on('dragend', function (e) {
+                         previousAction = "Move"
+                         previousStates.push(marker)
+                     });
+
+                    return marker;
+                }
+            }).addTo(mymap);
+
+            }
+            else if(previousAction == "Add"){
+                mymap.removeLayer(previosuState)
+            }
+            else if(previousAction == "Move"){
+                mymap.removeLayer(previousStates[1])
+
+
+
+                var geojsonFeature = {
+                "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [previousStates[0].lng, previousStates[0].lat]
+                }
+            }
+
+            var marker;
+
+            L.geoJson(geojsonFeature, {
+
+                pointToLayer: function(feature, latlng){
+
+                    marker = L.marker(previousStates[0], {
+
+                        title: "Resource Location",
+                        alt: "Resource Location",
+                        riseOnHover: true,
+                        draggable: true,
+                        icon: greenIcon,
+
+                    }).bindPopup("<input type='button' value='New location, Click to delete this marker' class='marker-delete-button'/>");
+
+                    marker.on("popupopen", onPopupOpen);
+                    marker.on('dragstart', function (e) {
+                        previousStates = []
+                        previousStates.push(marker.getLatLng())
+                    });
+                     marker.on('dragend', function (e) {
+                         previousAction = "Move"
+                         previousStates.push(marker)
+                     });
+
+                    return marker;
+                }
+            }).addTo(mymap);
+            }
             /*
             * possible options are
+            * Add a marker
+            * Move a marker
+            * Delete a marker
             * */
 
             //change back to previous state
-            previosuState = 0
+            previousAction = 0
         }
+
+
+
+
 
         function helpButton() {
             //document.getElementById('help').bindPopup("here is help");
@@ -402,6 +506,14 @@
 
                                 }).bindPopup("<input type='button' value='Detections: " + total_detections + ", Click to delete this marker' class='marker-delete-button'/>");
                                 marker.on("popupopen", onPopupOpen);
+                                marker.on('dragstart', function (e) {
+                                    previousStates = []
+                                    previousStates.push(marker.getLatLng())
+                                });
+                                 marker.on('dragend', function (e) {
+                                     previousAction = "Move"
+                                     previousStates.push(marker)
+                                 });
                                 // .bindPopup("<input type='button' value=" + total_detections + "Delete this marker class='marker-delete-button'/>");
                                 return marker;
                             }
@@ -422,6 +534,14 @@
                                 }).bindPopup("<input type='button' value='Detections: " + total_detections + ", Click to delete this marker' class='marker-delete-button'/>");
 
                                 marker.on("popupopen", onPopupOpen);
+                                marker.on('dragstart', function (e) {
+                                    previousStates = []
+                                    previousStates.push(marker.getLatLng())
+                                });
+                                 marker.on('dragend', function (e) {
+                                     previousAction = "Move"
+                                     previousStates.push(marker)
+                                 });
                                 // .bindPopup("<input type='button' value=" + total_detections + "Delete this marker class='marker-delete-button'/>");
                                 return marker;
                             }
@@ -442,6 +562,14 @@
 
                                 }).bindPopup("<input type='button' value='Detections: " + total_detections + ", Click to delete this marker' class='marker-delete-button'/>");
                                 marker.on("popupopen", onPopupOpen);
+                                marker.on('dragstart', function (e) {
+                                    previousStates = []
+                                    previousStates.push(marker.getLatLng())
+                                });
+                                 marker.on('dragend', function (e) {
+                                     previousAction = "Move"
+                                     previousStates.push(marker)
+                                 });
                                 // .bindPopup("<input type='button' value=" + total_detections + "Delete this marker class='marker-delete-button'/>");
                                 return marker;
                             }
@@ -462,6 +590,14 @@
 
                                 }).bindPopup("<input type='button' value='Detections: " + total_detections + ", Click to delete this marker' class='marker-delete-button'/>");
                                 marker.on("popupopen", onPopupOpen);
+                                marker.on('dragstart', function (e) {
+                                    previousStates = []
+                                    previousStates.push(marker.getLatLng())
+                                });
+                                 marker.on('dragend', function (e) {
+                                     previousAction = "Move"
+                                     previousStates.push(marker)
+                                 });
                                 // .bindPopup("<input type='button' value=" + total_detections + "Delete this marker class='marker-delete-button'/>");
                                 return marker;
                             }
@@ -638,6 +774,8 @@
 
                 pointToLayer: function(feature, latlng){
 
+
+
                     marker = L.marker(e.latlng, {
 
                         title: "Resource Location",
@@ -649,9 +787,28 @@
 
                     marker.on("popupopen", onPopupOpen);
 
+                    marker.on('dragstart', function (e) {
+                        previousStates = []
+                        previousStates.push(marker.getLatLng())
+                     });
+
+                     marker.on('dragend', function (e) {
+                         previousAction = "Move"
+                         previousStates.push(marker)
+                     });
+
+                    previosuState = marker
+                    previousAction = "Add"
+
+
+
                     return marker;
                 }
             }).addTo(mymap);
+
+
+
+
         }
 
 
@@ -666,6 +823,8 @@
 
             // To remove marker on click of delete
             $(".marker-delete-button:visible").click(function () {
+                previosuState = tempMarker.getLatLng()
+                previousAction = "Delete"
                 mymap.removeLayer(tempMarker);
             });
         }
@@ -755,6 +914,15 @@ $(".get-markers").on("click", getAllMarkers);
             }).bindPopup("<input type='button' value='data['locations'][i][0]' class='marker-delete-button'/>");
             //break it up into multiple strings
             marker.on("popupopen", onPopupOpen);
+            marker.on('dragstart', function (e) {
+                        previousStates = []
+                        previousStates.push(marker.getLatLng())
+            });
+             marker.on('dragend', function (e) {
+                 previousAction = "Move"
+                 previousStates.push(marker)
+             });
+
 
             return marker;
         }
