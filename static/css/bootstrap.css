@@ -53,6 +53,12 @@
   @-ms-viewport {
     width: device-width;
   }
+
+
+ button{
+     background-color: #4CAF50; /* Green */
+
+ }
   
   article, aside, figcaption, figure, footer, header, hgroup, main, nav, section {
     display: block;
@@ -9091,4 +9097,16 @@ input[type=file] {
       border-color: #dee2e6;
     }
   }
+
+
+.button {
+  background-color: #4CAF50; /* Green */
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+}
   /*# sourceMappingURL=bootstrap.css.map */
