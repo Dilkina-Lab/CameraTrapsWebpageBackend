@@ -9,7 +9,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
-
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
@@ -33,7 +34,11 @@
     <script src="https://unpkg.com/georaster"></script>
     <script src="https://unpkg.com/proj4"></script>
     <script src="https://unpkg.com/georaster-layer-for-leaflet"></script>
-
+    
+    <style>
+         body { margin: 0; padding: 0; }
+         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+     </style>
 </head>
 <body>
 
@@ -48,7 +53,7 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-lg-9">
-                <div id="mapid" style="width: 1230px; height: 900px;"></div>
+                <div id="mapid" style="width: 1000px; height: 800px;"></div>
             </div>
             <div class="col-lg-3">
                 <div class="card" style="width: 18rem;">
@@ -615,6 +620,13 @@
             this.x = x;
             this.y = y;
         }
+        
+        function getColor(d) {
+            return d == 4 ? '#800026' :
+                 d == 3 ? '#E31A1C' :
+                d == 2 ? '#FD8D3C' :
+                d == 1 ? '#FED976' : '#FFEDA000';
+        }
 
         var mymap = L.map('mapid', {
         }).setView([-2, 113], 1);
@@ -705,6 +717,8 @@
 
         });
         });
+        
+        
 //Important: Here processes the geoTiff data
         document.getElementById("geotiff-file").addEventListener("change", function(event) {
                 var file = event.target.files[0];
@@ -712,34 +726,35 @@
 
                 var reader = new FileReader();
                 reader.readAsArrayBuffer(file);
-                reader.onloadend = function() {
-                var arrayBuffer = reader.result;
-                parseGeoraster(arrayBuffer).then(georaster => {
+                reader.onloadend = function () {
+                     var arrayBuffer = reader.result;
+                     console.log(arrayBuffer);
+                     parseGeoraster(arrayBuffer).then(georaster => {
 
-                    console.log("georaster:", georaster);
-                    var max_value = georaster.maxs[0];
-                    /*
-                        GeoRasterLayer is an extension of GridLayer,
-                        which means can use GridLayer options like opacity.
-                        Just make sure to include the georaster option!
-                        http://leafletjs.com/reference-1.2.0.html#gridlayer
-                    */
-                    var layer = new GeoRasterLayer({
-                        georaster: georaster,
-                        opacity: 0.2,
-                        //pixelValuesToColorFn: values => console.log(values),
-                        pixelValuesToColorFn: values => values[0] == 0 ? '#FFFFFF' : values[0] == 1 ? '#F07470' : values[0] == 2 ? '#B12E21' :  '#8B0001',
-                         //pixelValuesToColorFn: values => `hsl(120,100%,${(1-values[0]/max_value/2)*100}%)`,
-                        resolution: 96
-                    });
-                    console.log("layer:", layer);
-                    layer.addTo(mymap);
+                         console.log("georaster:", georaster);
+                         var max_value = georaster.maxs[0];
+                         /*
+                             GeoRasterLayer is an extension of GridLayer,
+                             which means can use GridLayer options like opacity.
+                             Just make sure to include the georaster option!
+                             http://leafletjs.com/reference-1.2.0.html#gridlayer
+                         */
+                         var layer = new GeoRasterLayer({
+                             georaster: georaster,
+                             opacity:1,
+                             // opacity: values => values == 0? 0 : 0,
+                             pixelValuesToColorFn: getColor,
+                             // pixelValuesToColorFn: values => `hsl(120,100%,${(1 - values[0] / max_value / 2) * 100}%)`,
+                             resolution: 256
+                         });
+                         console.log("layer:", layer);
+                         layer.addTo(mymap);
 
-                    mymap.fitBounds(layer.getBounds());
-                    console.log("geotiffbound:", layer.getBounds());
-                    document.getElementById("overlay").style.display = "none";
-                });
-                };
+                         mymap.fitBounds(layer.getBounds());
+                         console.log("geotiffbound:", layer.getBounds());
+                         document.getElementById("overlay").style.display = "none";
+                     });
+                 };
             });
 
 // initialize the map on the "map" div with a given center and zoom
