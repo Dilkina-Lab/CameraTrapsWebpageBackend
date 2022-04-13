@@ -81,12 +81,6 @@
                         <label for="outdoors-v11">outdoors</label>
                         </div>
 
-
-
-
-
-
-
                         <!-- <a href="#" class="btn btn-primary" onclick="getCSV()">Load locations</a><br> -->
                         <h4>Load a CSV File</h4>
                         <input type="file" class="menu" id="file-selector" multiple/>
@@ -122,7 +116,7 @@
     </div>
 
     <script>
-        import { writeArrayBuffer } from 'geotiff';
+        //import { writeArrayBuffer } from 'geotiff';
         //idea http://devmag.org.za/2009/05/03/poisson-disk-sampling/
         function addTOSpace(lines){
             var mk = new L.FeatureGroup();
@@ -630,8 +624,7 @@
                 d == 1 ? '#FED976' : '#FFEDA000';
         }
 
-        var mymap = L.map('mapid', {
-        }).setView([-2, 113], 1);
+        var mymap = L.map('mapid', {drawControl: true}).setView([-2, 113], 1);
 
         L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
               minZoom: 2,
@@ -642,6 +635,102 @@
                 'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
                id: 'mapbox/streets-v11'
         }).addTo(mymap);
+        
+        //Try 3: https://leaflet.github.io/Leaflet.draw/docs/examples/full.html
+        L.control.layers({
+            'osm': osm.addTo(mymap),
+            "google": L.tileLayer('http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}', {
+                attribution: 'google'
+            })
+        }, { 'drawlayer': drawnItems }, { position: 'topleft', collapsed: false }).addTo(mymap);
+        mymap.addControl(new L.Control.Draw({
+            edit: {
+                featureGroup: drawnItems,
+                poly: {
+                    allowIntersection: false
+                }
+            },
+            draw: {
+                polygon: {
+                    allowIntersection: false,
+                    showArea: true
+                }
+            }
+        }));
+
+        mymap.on(L.Draw.Event.CREATED, function (event) {
+            var layer = event.layer;
+
+            drawnItems.addLayer(layer);
+        });
+        
+        // Try 2: https://leaflet.github.io/Leaflet.draw/docs/leaflet-draw-latest.html
+        var drawnItems = new L.FeatureGroup();
+             mymap.addLayer(drawnItems);
+             var drawControl = new L.Control.Draw({
+                 edit: {
+                     featureGroup: drawnItems
+                 }
+        });
+        mymap.addControl(drawControl);
+        var modifiedDraw = L.drawLocal.extend({
+                 draw: {
+                     toolbar: {
+                         buttons: {
+                             polygon: 'Draw an awesome polygon'
+                         }
+                     }
+                 }
+             });
+        var toolbar = L.Toolbar();
+        toolbar.addToolbar(mymap);
+        
+        // Try 1: Initialise the FeatureGroup to store editable layers https://jsfiddle.net/user2314737/324h2d9q 
+        var editableLayers = new L.FeatureGroup();
+        mymap.addLayer(editableLayers);
+
+        var drawPluginOptions = {
+          position: 'topright',
+          draw: {
+            polygon: {
+              allowIntersection: false, // Restricts shapes to simple polygons
+              drawError: {
+                color: '#e1e100', // Color the shape will turn when intersects
+                message: 'Please draw a polygon without the intersection.' // Message that will show when intersect
+              },
+              shapeOptions: {
+                color: '#97009c'
+              }
+            },
+            // disable toolbar item by setting it to false
+            polyline: false,
+            circle: false, // Turns off this drawing tool
+            rectangle: true,
+            marker: false,
+            },
+          edit: {
+            featureGroup: editableLayers, //REQUIRED!!
+            remove: true
+          }
+        };
+
+        // Initialise the draw control and pass it the FeatureGroup of editable layers
+        var drawControl = new L.Control.Draw(drawPluginOptions);
+        mymap.addControl(drawControl);
+
+        var editableLayers = new L.FeatureGroup();
+        mymap.addLayer(editableLayers);
+
+        mymap.on('draw:created', function(e) {
+          var type = e.layerType,
+            layer = e.layer;
+
+          if (type === 'marker') {
+            layer.bindPopup('A popup!');
+          }
+
+          editableLayers.addLayer(layer);
+        });
 
         const layerList = document.getElementById('menu');
 
@@ -954,6 +1043,7 @@ $(".get-markers").on("click", getAllMarkers);
     }
     
     //tiff to geotiff conversion: https://github.com/geotiffjs/geotiff.js/
+    /* DO NOT DELETE!
     function readBackendTiff() {
         const input = document.getElementById('BackendFile'):
         input.onchange = async function() {
@@ -986,7 +1076,7 @@ $(".get-markers").on("click", getAllMarkers);
                 document.getElementById("overlay").style.display = "none";
             });
         }
-    }
+    }*/
     
     </script>
 
