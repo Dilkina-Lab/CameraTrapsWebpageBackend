@@ -636,87 +636,13 @@
                id: 'mapbox/streets-v11'
         }).addTo(mymap);
         
-        //Try 3: https://leaflet.github.io/Leaflet.draw/docs/examples/full.html
-        L.control.layers({
-            'osm': osm.addTo(mymap),
-            "google": L.tileLayer('http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}', {
-                attribution: 'google'
-            })
-        }, { 'drawlayer': drawnItems }, { position: 'topleft', collapsed: false }).addTo(mymap);
-        mymap.addControl(new L.Control.Draw({
-            edit: {
-                featureGroup: drawnItems,
-                poly: {
-                    allowIntersection: false
-                }
-            },
-            draw: {
-                polygon: {
-                    allowIntersection: false,
-                    showArea: true
-                }
-            }
-        }));
-
-        mymap.on(L.Draw.Event.CREATED, function (event) {
-            var layer = event.layer;
-
-            drawnItems.addLayer(layer);
-        });
-        
+        // Try 3: https://leaflet.github.io/Leaflet.draw/docs/examples/full.html
         // Try 2: https://leaflet.github.io/Leaflet.draw/docs/leaflet-draw-latest.html
-        var drawnItems = new L.FeatureGroup();
-             mymap.addLayer(drawnItems);
-             var drawControl = new L.Control.Draw({
-                 edit: {
-                     featureGroup: drawnItems
-                 }
-        });
-        mymap.addControl(drawControl);
-        var modifiedDraw = L.drawLocal.extend({
-                 draw: {
-                     toolbar: {
-                         buttons: {
-                             polygon: 'Draw an awesome polygon'
-                         }
-                     }
-                 }
-             });
-        var toolbar = L.Toolbar();
-        toolbar.addToolbar(mymap);
+        // Try 1: Initialise the FeatureGroup to store editable layers https://jsfiddle.net/user2314737/324h2d9q
         
-        // Try 1: Initialise the FeatureGroup to store editable layers https://jsfiddle.net/user2314737/324h2d9q 
-        var editableLayers = new L.FeatureGroup();
-        mymap.addLayer(editableLayers);
-
-        var drawPluginOptions = {
-          position: 'topright',
-          draw: {
-            polygon: {
-              allowIntersection: false, // Restricts shapes to simple polygons
-              drawError: {
-                color: '#e1e100', // Color the shape will turn when intersects
-                message: 'Please draw a polygon without the intersection.' // Message that will show when intersect
-              },
-              shapeOptions: {
-                color: '#97009c'
-              }
-            },
-            // disable toolbar item by setting it to false
-            polyline: false,
-            circle: false, // Turns off this drawing tool
-            rectangle: true,
-            marker: false,
-            },
-          edit: {
-            featureGroup: editableLayers, //REQUIRED!!
-            remove: true
-          }
-        };
-
         // Initialise the draw control and pass it the FeatureGroup of editable layers
-        var drawControl = new L.Control.Draw(drawPluginOptions);
-        mymap.addControl(drawControl);
+        // var drawControl = new L.Control.Draw(drawPluginOptions);
+        // mymap.addControl(drawControl);
 
         var editableLayers = new L.FeatureGroup();
         mymap.addLayer(editableLayers);
