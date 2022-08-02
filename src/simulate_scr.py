@@ -1,11 +1,3 @@
-"""
-Script for simulating a populations of individuals over a landscape, 
-generating regular trap layouts, and simulating data from spatial 
-capture-recapture studies.
-
-The landscape raster, ground truth parameter values and other settings
-used are read from a configuration file in /data/simulation/config.
-"""
 import argparse
 import csv
 import itertools
@@ -21,34 +13,17 @@ import rasterio
 # import sys
 import time
 # import tqdm
+from osgeo import gdal, osr
+
 
 from visualize import *
 from utils import find_lcp_to_pts
 
 def lambda_ipp_log_linear(x, beta0, beta1):
-    """
-    Rate function for an inhomogeneous poisson process, in which
-    the intensity is a log-linear function of x.
-
-    lambda = exp(beta0 + beta1*x)
-    """
     return np.exp(beta0 + beta1*x)
 
 def simulate_ipp(N, raster, n_real=1, seed=1111):
-    """
-    Simulates a spatial inhomogeneous Poisson process over 2D raster.
-    Simulation is done using the Lewis and Schedler thinning algorithm.
 
-    Args:
-    N           - number of point events to simulate per realizition
-    raster      - raster over which to simulate the IPP
-    n_real      - number of realizations of the IPP to simulate
-    seed        - random seed for the simulation
-
-    Returns:
-    points      - list of n_real lists; each sublist contains N tuples (x, y) specifying spatial 
-                  points for one realization of the IPP.
-    """
     np.random.seed(seed)
 
     n_pixels = np.prod(raster.shape)
@@ -57,7 +32,7 @@ def simulate_ipp(N, raster, n_real=1, seed=1111):
     min_rast_val = np.amin(raster)
     max_rast_val = np.amax(raster)
     lambda_max = max(lambda_ipp_log_linear(min_rast_val, beta0, beta1), lambda_ipp_log_linear(max_rast_val, beta0, beta1))
-    
+
     points = [] # list points in each realization of the IPP
     for rno in range(n_real):
         counter = 0
@@ -75,28 +50,7 @@ def simulate_ipp(N, raster, n_real=1, seed=1111):
     return points
 
 def simulate_capture_histories(ac, tl, K, lcp_dist, alpha0, alpha1, n_real=50, seed=1111):
-    """
-    Simulates a capture history for a simulated spatial capture-recapture study.
 
-    Assumes multiple individuals can be detected at each detector in a given sampling
-    occasion--but multiple detections of the same individual at the same trap in a
-    single sampling occasion are indistinguishable.
-
-    Args:
-    ac          - list of tuples (x,y) storing activity center locations
-    tl          - list of tuples (x,y) storing trap locations
-    K           - number of sampling occasions
-    lcp_dist    - least cost paths between each trap and every raster pixel
-    alpha0      - capture probability parameter
-    alpha1      - home range parameter
-    n_real      - number of realizations of the capture history to simulate
-    seed        - random seed for the simulation
-
-    Returns:
-    detections  - matrix of the number of times each individual was detected at
-                  each detector
-
-    """
     n_individuals = len(ac)
     n_traps = len(tl)
     detections = []
@@ -114,6 +68,112 @@ def simulate_capture_histories(ac, tl, K, lcp_dist, alpha0, alpha1, n_real=50, s
         rdetections = rdetections[~np.all(rdetections==0, axis=1)]
         detections.append(rdetections)
     return(detections)
+
+def create_file_layout(landscape_raster_file, trap_locations_file):
+    ds = gdal.Open(landscape_raster_file)
+    old_cs = osr.SpatialReference()
+    old_cs.ImportFromWkt(ds.GetProjectionRef())
+
+    # create the new coordinate system
+    wgs84_wkt = """
+            GEOGCS["WGS 84",
+                DATUM["WGS_1984",
+                    SPHEROID["WGS 84",6378137,298.257223563,
+                        AUTHORITY["EPSG","7030"]],
+                    AUTHORITY["EPSG","6326"]],
+                PRIMEM["Greenwich",0,
+                    AUTHORITY["EPSG","8901"]],
+                UNIT["degree",0.01745329251994328,
+                    AUTHORITY["EPSG","9122"]],
+                AUTHORITY["EPSG","4326"]] """
+
+    new_cs = osr.SpatialReference()
+    new_cs.ImportFromWkt(wgs84_wkt)
+
+    # create a transform object to convert between coordinate systems
+    transform = osr.CoordinateTransformation(old_cs, new_cs)
+
+    # get the point to transform, pixel (0,0) in this case
+    width = ds.RasterXSize
+    height = ds.RasterYSize
+    gt = ds.GetGeoTransform()
+    minx = gt[0]
+    miny = gt[3] + width * gt[4] + height * gt[5]
+    maxx = gt[0] + width * gt[1] + height * gt[2]
+    maxy = gt[3]
+
+    # get the coordinates in lat long
+    latlong = transform.TransformPoint(minx, miny)
+    minlong = latlong[0]
+    minlat = latlong[1]
+    #print("long " + str(latlong[0]))
+    #print("lat " + str(latlong[1]))
+    latlong = transform.TransformPoint(maxx, maxy)
+    #print("long " + str(latlong[0]))
+    #print("lat " + str(latlong[1]))
+    maxlong = latlong[0]
+    maxlat = latlong[1]
+
+    # get number of raster sells
+    width = ds.RasterXSize
+    height = ds.RasterYSize
+    #print("raster sell size?? x" + str(width))
+    #print("raster sell size?? y" + str(height))
+
+    # divide to see size of raster cell
+    longSize = maxlong - minlong
+    latSize = maxlat - minlat
+    longRosterSize = longSize / width
+    latRosterSize = latSize / height
+    #print("xSize " + str(longRosterSize) + " ySize " + str(latRosterSize))
+
+    # open second file to get coordinates of points
+    newChords = []
+    i = 0
+    f = open(trap_locations_file, "r")
+
+    # cycle through and add to final list
+    for x in f:
+        if i == 0:
+            i = 1
+            l = x.split(",")
+            number_of_traps = int(l[0])
+            #print("config paramaters " + str(number_of_traps))
+            continue
+        i = 1
+        l = x.split(",")
+        latVar = l[1]
+        longVar = l[2]
+        latIndex = 0
+        longIndex = 0
+        currentLow = minlat
+        currentHigh = minlat + latRosterSize
+        # check latatude
+        #print("\n" + latVar + " " + longVar)
+        if float(latVar) < float(minlat) or float(latVar) > float(maxlat):
+            print("does not work lat" + str(float(latVar)))
+        else:
+            while not (float(latVar) >= float(currentLow) and float(latVar) <= float(currentHigh)):
+                currentLow += latRosterSize
+                currentHigh += latRosterSize
+                latIndex += 1
+
+        # check longitude
+        currentLow = minlong
+        currentHigh = minlong + longRosterSize
+        #print("long stuff " + str(longVar) + " " + str(currentLow) + " " + str(maxlong))
+        if float(longVar) < float(minlong) or float(longVar) > float(maxlong):
+            print("does not work long" + str(float(longVar)) + "min long " + str(float(minlong))  + "max long " + str(float(maxlong)))
+        else:
+            #print("current stuff " + str(longVar) + " " + str(currentLow) + " " + str(currentHigh))
+            while not (float(longVar) >= float(currentLow) and float(longVar) <= float(currentHigh)):
+                currentLow += longRosterSize
+                currentHigh += longRosterSize
+                longIndex += 1
+
+        #print(str(latIndex) + " " + str(longIndex))
+        newChords.append([latIndex, longIndex])
+    return newChords, latRosterSize
 
 def create_grid_layout(n, m, raster, buffer=0.1):
     n_pix_h, n_pix_w = raster.shape
@@ -140,17 +200,27 @@ def main():
     with open(args.config_file, 'r') as cf:
         paramreader = csv.reader(cf)
         for line in paramreader:
-            if line[0] in ['landscape_raster_file', 'trap_config']:
+            if line[0] in ['landscape_raster_file', 'trap_config', 'trap_locations_file']:
                 config_params[line[0]] = line[1]
             elif line[0] in ['ALPHA0', 'ALPHA1', 'ALPHA2', 'raster_cell_size']:
                 config_params[line[0]] = float(line[1])
             else:
                 config_params[line[0]] = int(line[1])
-    
+
     # Load landscape
     landscape_raster = rasterio.open(config_params['landscape_raster_file'])
     landscape_ndarr = np.squeeze(np.array(landscape_raster.read()))
     landscape_raster_name = config_params['landscape_raster_file'].split('/')[-1].split('.tif')[0]
+
+
+
+
+    landscape_raster = rasterio.open(config_params['landscape_raster_file'])
+    landscape_ndarr = np.squeeze(np.array(landscape_raster.read()))
+    #print(landscape_ndarr.min(), landscape_ndarr.max())
+
+    landscape_ndarr = (landscape_ndarr - landscape_ndarr.min()) / (landscape_ndarr.max() - landscape_ndarr.min())
+    #print(landscape_ndarr.min(), landscape_ndarr.max())
 
     # Simulate ground truth activity centers
     timer = time.time()
@@ -162,7 +232,7 @@ def main():
             acwriter = csv.writer(f)
             for p in ac_realizations[acridx]:
                 acwriter.writerow([p[0], p[1]])
-        
+
     # Simulate grid of trap locations
     if config_params['trap_config'] == 'grid':
         timer = time.time()
@@ -174,6 +244,22 @@ def main():
                 tlwriter.writerow([p[0], p[1]])
         # visualize_trap_layout(landscape_ndarr, trap_loc)
 
+    elif config_params['trap_config'] == 'file':
+        trap_locations_name = config_params['trap_locations_file'].split('/')[-1].split('.csv')[0]
+        timer = time.time()
+        trap_loc = create_file_layout(config_params['landscape_raster_file'], config_params['trap_locations_file'])
+        print('Simulated trap locations in %0.2f seconds'%(time.time() - timer))
+        with open('../data/simulation/trap_locations/'+landscape_raster_name+'_file_'+trap_locations_name+'.csv', 'w') as f:
+            tlwriter = csv.writer(f)
+            for p in trap_loc[0]:
+                tlwriter.writerow([p[0], p[1]])
+        config_params['raster_cell_size'] = trap_loc[1]
+        trap_loc = trap_loc[0]
+
+        # visualize_trap_layout(landscape_ndarr, trap_loc)
+
+
+
     # Simulate capture histories
     timer = time.time()
     lcp_distances = find_lcp_to_pts(landscape_ndarr, config_params['ALPHA2'], trap_loc, raster_cell_size=config_params['raster_cell_size'])
@@ -184,7 +270,8 @@ def main():
         with open('../data/simulation/capture_histories/'+config_file_string+'_'+str(acridx)+'.pkl', 'wb') as f:
             pickle.dump(capture_histories, f)
     print('Simulated and saved spatial capture-recapture histories in %0.2f seconds'%(time.time() - timer))
-    
+
 
 if __name__ == '__main__':
     main()
+

@@ -30,6 +30,7 @@ def find_lcp(raster, alpha2, raster_cell_size=1):
     """
     Computes least cost path lengths between every pair of cells in a raster.
     """
+    #print(raster + " " + alpha2 )
     def get_cell_cost(x):
         return np.exp(x*alpha2)
     get_all_cell_costs = np.vectorize(get_cell_cost)
@@ -53,6 +54,7 @@ def find_lcp_to_pts(raster, alpha2, ref_pts, raster_cell_size=1):
     """
     Computes least cost path lengths from every cell in a raster to each of a list of reference points.
     """
+    #print(str(raster) + " " + str(alpha2))
     def get_cell_cost(x):
         return np.exp(x*alpha2)
     get_all_cell_costs = np.vectorize(get_cell_cost)
@@ -62,6 +64,7 @@ def find_lcp_to_pts(raster, alpha2, ref_pts, raster_cell_size=1):
     lcp_distances = np.zeros((len(ref_pts), raster.shape[0], raster.shape[1]))
     for rpidx in range(len(ref_pts)):
         rp = ref_pts[rpidx]
+        #print(rp)
         rp_int = (int(np.floor(rp[0])), int(np.floor(rp[1])))
         distances = lcp_graph.find_costs([rp_int])[0]
         lcp_distances[rpidx, ...] = distances*raster_cell_size

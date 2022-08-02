@@ -43,18 +43,20 @@ def main():
     N = config_params['N']
     K = config_params['K']
 
-    sys.stdout = open(log_file_name, 'w')
+    #sys.stdout = open(log_file_name, 'w')
     print('Ground truth parameter values:\nALPHA0: %d\nALPHA1: %0.4f\nALPHA2: %0.2f\nN: %d'%(ALPHA0, ALPHA1, ALPHA2, N))
 
     landscape_raster = rasterio.open(landscape_raster_file)
     landscape_ndarr = np.squeeze(np.array(landscape_raster.read()))
+    landscape_ndarr = (landscape_ndarr - landscape_ndarr.min()) / (landscape_ndarr.max() - landscape_ndarr.min())
+
     trap_loc = [(eval(line[0]), eval(line[1])) for line in csv.reader(open(trap_loc_path, 'r'))]
 
     # # Compute least cost paths through this landscape
     # lcp_distances = find_lcp_to_pts(landscape_ndarr, ALPHA2, trap_loc, raster_cell_size=raster_cell_size)
     
     # Load capture history
-    capture_history_path = '../data/simulation/capture_histories/%s_%d.pkl'%(config_file_name, args.ac_realization_no)
+    capture_history_path = '../data/simulation/capture_histories/%s_%d.pkl'%(config_file_name, args.ac_realization_no-1)
     capture_histories = pickle.load(open(capture_history_path, 'rb'))
     detections = capture_histories[args.caphist_realization_no]
     
